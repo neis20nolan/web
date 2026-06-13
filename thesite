@@ -1,74 +1,339 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Мой сайт</title>
+<meta charset="UTF-8">
+<title>Hacker OS</title>
 
-    <style>
-        body {
-            margin: 0;
-            font-family: Arial, sans-serif;
-            background: linear-gradient(135deg, #4facfe, #00f2fe);
-            color: white;
-            text-align: center;
-        }
+<style>
+body {
+    margin: 0;
+    overflow: hidden;
+    font-family: monospace;
+    background: black;
+    color: #00ff00;
+}
 
-        .container {
-            padding-top: 100px;
-        }
+/* MATRIX */
+canvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 0;
+}
 
-        h1 {
-            font-size: 3em;
-        }
+/* DESKTOP */
+#desktop {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    display: grid;
+    grid-template-columns: repeat(2, 150px);
+    gap: 40px;
+    padding: 40px;
+    z-index: 1;
+}
 
-        p {
-            font-size: 1.3em;
-        }
+.icon {
+    text-align: center;
+    cursor: pointer;
+}
 
-        button {
-            padding: 15px 30px;
-            font-size: 18px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            background: white;
-            color: #0077ff;
-            transition: 0.2s;
-        }
+.icon-img {
+    width: 60px;
+    height: 60px;
+    background: #00ff00;
+    color: black;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin: auto;
+    border-radius: 10px;
+}
 
-        button:hover {
-            transform: scale(1.05);
-        }
+/* WINDOWS */
+.window {
+    position: absolute;
+    width: 400px;
+    background: rgba(0,0,0,0.9);
+    border: 1px solid #00ff00;
+    box-shadow: 0 0 10px #00ff00;
+    z-index: 5;
+}
 
-        #counter {
-            font-size: 2em;
-            margin-top: 20px;
-        }
-    </style>
+.titlebar {
+    background: #001100;
+    padding: 5px;
+    cursor: move;
+    display: flex;
+    justify-content: space-between;
+}
+
+.buttons span {
+    cursor: pointer;
+    margin-left: 8px;
+}
+
+.content {
+    padding: 10px;
+    height: 200px;
+    overflow: auto;
+}
+
+/* TERMINAL */
+#terminalOutput {
+    white-space: pre-wrap;
+}
+
+input {
+    width: 100%;
+    background: black;
+    border: none;
+    color: #00ff00;
+    outline: none;
+}
+
+/* LOGIN */
+#login {
+    position: fixed;
+    width: 100%;
+    height: 100%;
+    background: black;
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+}
+
+.glitch {
+    animation: glitch 0.1s infinite;
+}
+
+@keyframes glitch {
+    0% { transform: translate(2px,-2px); }
+    50% { transform: translate(-2px,2px); }
+    100% { transform: translate(2px,2px); }
+}
+</style>
 </head>
+
 <body>
 
-<div class="container">
-    <h1>Привет!</h1>
-    <p>Это мой первый сайт.</p>
+<!-- LOGIN -->
+<div id="login">
+    <h2>ENTER PASSWORD</h2>
+    <input id="loginInput" type="password">
+</div>
 
-    <button onclick="clickMe()">Нажми меня</button>
+<canvas id="matrix"></canvas>
 
-    <div id="counter">0</div>
+<!-- DESKTOP -->
+<div id="desktop">
+
+<div class="icon" onclick="openApp('terminal')">
+    <div class="icon-img">&gt;_</div>
+    <div>Program Console</div>
+</div>
+
+<div class="icon" onclick="openApp('cracker')">
+    <div class="icon-img">*</div>
+    <div>Password Cracker</div>
+</div>
+
+<div class="icon" onclick="openApp('trace')">
+    <div class="icon-img">📡</div>
+    <div>IP Tracker</div>
+</div>
+
+<div class="icon" onclick="openApp('virus')">
+    <div class="icon-img">☣</div>
+    <div>Virus.exe</div>
+</div>
+
+</div>
+
+<!-- WINDOWS -->
+
+<div class="window" id="terminalWin" style="top:50px;left:50px;display:none;">
+    <div class="titlebar">
+        Terminal
+        <div class="buttons"><span onclick="closeWin('terminalWin')">✖</span></div>
+    </div>
+    <div class="content">
+        <div id="terminalOutput"></div>
+        <input id="cmdInput">
+    </div>
+</div>
+
+<div class="window" id="crackerWin" style="top:100px;left:200px;display:none;">
+    <div class="titlebar">
+        Password Cracker
+        <div class="buttons"><span onclick="closeWin('crackerWin')">✖</span></div>
+    </div>
+    <div class="content" id="crackerContent">Click start...</div>
+</div>
+
+<div class="window" id="traceWin" style="top:150px;left:350px;display:none;">
+    <div class="titlebar">
+        IP Tracker
+        <div class="buttons"><span onclick="closeWin('traceWin')">✖</span></div>
+    </div>
+    <div class="content" id="traceContent">Idle...</div>
+</div>
+
+<div class="window" id="virusWin" style="top:200px;left:500px;display:none;">
+    <div class="titlebar">
+        Virus.exe
+        <div class="buttons"><span onclick="closeWin('virusWin')">✖</span></div>
+    </div>
+    <div class="content">⚠ Dangerous program</div>
 </div>
 
 <script>
-let count = 0;
+// MATRIX
+const canvas = document.getElementById("matrix");
+const ctx = canvas.getContext("2d");
+canvas.width = innerWidth;
+canvas.height = innerHeight;
 
-function clickMe() {
-    count++;
-    document.getElementById("counter").textContent = count;
+const letters = "01ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+const fontSize = 16;
+const columns = canvas.width/fontSize;
+let drops = Array(Math.floor(columns)).fill(1);
 
-    if (count === 10) {
-        alert("Уже 10 кликов!");
+function draw(){
+    ctx.fillStyle="rgba(0,0,0,0.05)";
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.fillStyle="#0F0";
+    ctx.font=fontSize+"px monospace";
+
+    for(let i=0;i<drops.length;i++){
+        const t=letters[Math.floor(Math.random()*letters.length)];
+        ctx.fillText(t,i*fontSize,drops[i]*fontSize);
+        if(drops[i]*fontSize>canvas.height && Math.random()>0.975){
+            drops[i]=0;
+        }
+        drops[i]++;
     }
 }
+setInterval(draw,33);
+
+// LOGIN
+document.getElementById("loginInput").addEventListener("keydown",e=>{
+    if(e.key==="Enter"){
+        if(e.target.value==="1337"){
+            document.getElementById("login").style.display="none";
+        } else {
+            e.target.value="";
+        }
+    }
+});
+
+// OPEN APPS
+function openApp(app){
+    if(app==="terminal") show("terminalWin");
+    if(app==="cracker"){
+        show("crackerWin");
+        crackPassword();
+    }
+    if(app==="trace"){
+        show("traceWin");
+        traceIP();
+    }
+    if(app==="virus"){
+        show("virusWin");
+        virusMode();
+    }
+}
+
+function show(id){
+    document.getElementById(id).style.display="block";
+}
+
+// CLOSE
+function closeWin(id){
+    document.getElementById(id).style.display="none";
+}
+
+// DRAG
+document.querySelectorAll(".window").forEach(win=>{
+    const bar = win.querySelector(".titlebar");
+    let x,y,drag=false;
+
+    bar.onmousedown=e=>{
+        drag=true;
+        x=e.clientX-win.offsetLeft;
+        y=e.clientY-win.offsetTop;
+    };
+    document.onmousemove=e=>{
+        if(drag){
+            win.style.left=e.clientX-x+"px";
+            win.style.top=e.clientY-y+"px";
+        }
+    };
+    document.onmouseup=()=>drag=false;
+});
+
+// TERMINAL
+const out = document.getElementById("terminalOutput");
+const input = document.getElementById("cmdInput");
+
+function print(t){
+    out.textContent += t+"\n";
+}
+
+input.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){
+        const cmd=input.value;
+        print("> "+cmd);
+
+        if(cmd==="help") print("help, hack, clear");
+        else if(cmd==="hack") print("ACCESS GRANTED ✔");
+        else if(cmd==="clear") out.textContent="";
+        else print("unknown");
+
+        input.value="";
+    }
+});
+
+// CRACK
+function crackPassword(){
+    const el = document.getElementById("crackerContent");
+    let p=0;
+    const i=setInterval(()=>{
+        p+=10;
+        el.textContent="Cracking... "+p+"%";
+        if(p>=100){
+            clearInterval(i);
+            el.textContent="PASSWORD FOUND";
+        }
+    },200);
+}
+
+// TRACE
+function traceIP(){
+    const el = document.getElementById("traceContent");
+    let steps=["Locating...","Bypassing proxy...","Tracking...","FOUND: Bangkok"];
+    let i=0;
+    const t=setInterval(()=>{
+        el.textContent=steps[i];
+        i++;
+        if(i>=steps.length) clearInterval(t);
+    },800);
+}
+
+// VIRUS
+function virusMode(){
+    document.body.classList.add("glitch");
+    setTimeout(()=>document.body.classList.remove("glitch"),4000);
+}
+
+// RESIZE
+window.onresize=()=>{
+    canvas.width=innerWidth;
+    canvas.height=innerHeight;
+};
 </script>
 
 </body>
